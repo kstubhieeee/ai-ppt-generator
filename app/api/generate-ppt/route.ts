@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Use environment variable or fallback to the provided key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBmuGPpLhFgSNSsY273SLKBrVMGdMCuzKo';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 interface SlideContent {
