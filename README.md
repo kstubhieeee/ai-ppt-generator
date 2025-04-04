@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI PPT Generator
+
+A web application that uses Google's Gemini 2.0 API to generate PowerPoint-style presentations from titles, text content, or PDF files.
+
+## Features
+
+- Generate presentations from a title, text content, or PDF
+- Maximum of 4 slides per presentation
+- Each slide includes a heading, bullet points, and relevant images
+- Download the generated presentation as an HTML file that can be printed or converted to PDF
+- Modern, responsive UI built with Next.js and Shadcn UI
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ installed
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/ai-ppt-generator.git
+cd ai-ppt-generator
+```
+
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Create a `.env.local` file in the root directory and add your Gemini API key:
+```
+GEMINI_API_KEY=your_api_key_here
+```
+
+4. Start the development server
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Enter a title, paste text content, or upload a PDF file
+2. Click "Generate Presentation"
+3. View the generated slides with navigation controls
+4. Download the presentation as an HTML file
+5. Print or convert the HTML file to PDF if needed
 
-## Learn More
+## Limitations
 
-To learn more about Next.js, take a look at the following resources:
+- PDF parsing is simulated in this demo. In a production environment, you would use a PDF parsing library like pdf.js
+- Image suggestions are based on search queries, not actual image generation
+- Presentation style is basic HTML/CSS
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+MIT
 
-## Deploy on Vercel
+## Acknowledgements
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Next.js](https://nextjs.org/) - The React framework
+- [Shadcn UI](https://ui.shadcn.com/) - UI components
+- [Google Gemini API](https://ai.google.dev/gemini-api) - AI text generation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Gemini Image Generation
+
+This application now supports AI-generated images using Google's Gemini API:
+
+1. Sign up for a Gemini API key at [Google AI Studio](https://ai.google.dev/)
+2. Copy your API key
+3. Create a `.env.local` file in the root directory
+4. Add your API key to the file: `GEMINI_API_KEY=your_api_key_here`
+
+With a valid API key, the application will generate unique images for each slide. If no API key is provided, it will fall back to placeholder images.
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run the development server
+npm run dev
+```
