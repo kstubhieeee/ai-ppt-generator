@@ -42,7 +42,7 @@ const getPlaceholderImageUrl = (searchTerm: string, index: number): string => {
 
 export default function Presentation({ slides }: PresentationProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [searchedImages, setSearchedImages] = useState<Record<number, string>>({});
+  const [searchedImages, setSearchedImages] = useState<Record<number, { url: string; alt: string; attribution?: { photographer: string; photographerUrl: string; source: string; sourceUrl: string }; thumbnails?: string[] }>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   
@@ -85,8 +85,8 @@ export default function Presentation({ slides }: PresentationProps) {
       console.log(`Searching image for slide ${slideIndex}: "${searchTerm}"`);
       
       try {
-        // Use our Gemini image generation API
-        const response = await fetch('/api/gemini-image', {
+        // Use our centralized image service API
+        const response = await fetch('/api/image-service', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ searchTerm }),
@@ -97,12 +97,18 @@ export default function Presentation({ slides }: PresentationProps) {
         }
         
         const data = await response.json();
-        console.log(`API returned data for slide ${slideIndex}:`, data);
+        console.log(`Image service returned data for slide ${slideIndex}:`, data);
         
-        // Store the image URL from our API
+        // Store the image data
         setSearchedImages(prev => ({
           ...prev,
-          [slideIndex]: data.imageUrl
+          [slideIndex]: {
+            url: data.imageUrl,
+            alt: data.alt || searchTerm,
+            attribution: data.attribution,
+            source: data.source,
+            thumbnails: data.thumbnails || []
+          }
         }));
       } catch (apiError) {
         console.error('API error, using placeholder:', apiError);
@@ -110,7 +116,11 @@ export default function Presentation({ slides }: PresentationProps) {
         const placeholderUrl = getPlaceholderImageUrl(searchTerm, slideIndex);
         setSearchedImages(prev => ({
           ...prev,
-          [slideIndex]: placeholderUrl
+          [slideIndex]: {
+            url: placeholderUrl,
+            alt: searchTerm,
+            source: 'placeholder'
+          }
         }));
       }
     } catch (err) {
@@ -224,7 +234,7 @@ export default function Presentation({ slides }: PresentationProps) {
     slides.forEach((slide, index) => {
       const theme = slideThemes[index % slideThemes.length];
       // Use generated images if available, otherwise use placeholders
-      const imageUrl = searchedImages[index] || getPlaceholderImageUrl(slide.image, index);
+      const imageUrl = searchedImages[index]?.url || getPlaceholderImageUrl(slide.image, index);
       
       html += `
       <div class="slide" style="background-color: ${theme.bgColor}; color: ${theme.textColor};">
@@ -323,28 +333,55 @@ export default function Presentation({ slides }: PresentationProps) {
                   {loading[currentSlide] ? (
                     <div className="flex flex-col items-center justify-center">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-2"></div>
-                      <span className="text-sm text-muted-foreground">Generating image...</span>
+                      <span className="text-sm text-muted-foreground">Searching for image...</span>
                     </div>
                   ) : (
                     <img 
-                      src={searchedImages[currentSlide] || placeholderUrl}
-                      alt={currentSlideData.image}
+                      src={searchedImages[currentSlide]?.url || placeholderUrl}
+                      alt={searchedImages[currentSlide]?.alt || currentSlideData.image}
                       className="object-cover w-full h-full"
                     />
                   )}
                 </div>
               </AspectRatio>
               <div className="mt-2 text-center">
-                <a 
-                  href={googleImageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm flex items-center justify-center gap-1"
-                  style={{color: theme.accentColor}}
-                >
-                  <ExternalLink size={14} />
-                  Find more images
-                </a>
+                {searchedImages[currentSlide]?.attribution ? (
+                  <div className="text-xs text-muted-foreground flex flex-col items-center">
+                    <span>
+                      Photo by{' '}
+                      <a 
+                        href={searchedImages[currentSlide].attribution.photographerUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                        style={{color: theme.accentColor}}
+                      >
+                        {searchedImages[currentSlide].attribution.photographer}
+                      </a>
+                      {' '}on{' '}
+                      <a 
+                        href={searchedImages[currentSlide].attribution.sourceUrl}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                        style={{color: theme.accentColor}}
+                      >
+                        {searchedImages[currentSlide].attribution.source}
+                      </a>
+                    </span>
+                  </div>
+                ) : (
+                  <a 
+                    href={googleImageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm flex items-center justify-center gap-1"
+                    style={{color: theme.accentColor}}
+                  >
+                    <ExternalLink size={14} />
+                    Find more images
+                  </a>
+                )}
               </div>
             </div>
           </div>

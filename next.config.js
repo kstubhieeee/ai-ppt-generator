@@ -21,6 +21,13 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['pdf-parse'],
+  },
+  webpack(config) {
+    config.externals.push('canvas', 'jsdom');
+    return config;
+  },
 };
 
 module.exports = nextConfig; 
