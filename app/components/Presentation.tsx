@@ -394,100 +394,75 @@ export default function Presentation({ slides }: PresentationProps) {
 
   // Function to download presentation as PPTX data using client-side approach
   const handleDownloadPPTX = () => {
-    // Create a PowerPoint-like XML format
-    const pptContent = `
-    <html xmlns:v="urn:schemas-microsoft-com:vml"
-    xmlns:o="urn:schemas-microsoft-com:office:office"
-    xmlns:p="urn:schemas-microsoft-com:office:powerpoint"
-    xmlns:oa="urn:schemas-microsoft-com:office:activation"
-    xmlns="http://www.w3.org/TR/REC-html40">
+    const currentTheme = presentationThemes[selectedTheme as keyof typeof presentationThemes];
+    
+    // Create PowerPoint-compatible HTML format
+    let html = `
+    <!DOCTYPE html>
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns:m="http://schemas.microsoft.com/office/omml/2004/12/core"
+          xmlns:mv="http://macVmlSchemaUri" xmlns="http://www.w3.org/TR/REC-html40">
     <head>
       <meta http-equiv=Content-Type content="text/html; charset=utf-8">
       <meta name=ProgId content=PowerPoint.Slide>
       <meta name=Generator content="Microsoft PowerPoint">
       <style>
-        /* PowerPoint styles would go here */
-        div.slide { page-break-after: always }
+        /* PowerPoint compatible styling */
+        body { margin: 0; padding: 0; }
+        div.Section1 { page: Section1; }
+        div.slide { page-break-after: always; }
+        h1 { font-size: 36pt; margin: 0; padding: 0; }
+        ul { margin-top: 20pt; }
+        li { font-size: 24pt; margin-bottom: 10pt; }
+        img { max-width: 400px; max-height: 300px; }
+        .instructions { color: #666; font-style: italic; }
       </style>
     </head>
     <body>
-    ${slides.map((slide, index) => {
-      const imageUrl = searchedImages[index]?.url || getPlaceholderImageUrl(slide.image, index);
-      return `
-      <div class="slide">
-        <h1>${slide.heading}</h1>
-        <ul>
-          ${slide.points.map(point => `<li>${point}</li>`).join('')}
-        </ul>
-        <img src="${imageUrl}" alt="${slide.image}" width="400">
+      <div class="instructions">
+        <p>To convert to PowerPoint:</p>
+        <ol>
+          <li>Open in Microsoft Word</li>
+          <li>Go to File > Save As</li>
+          <li>Select PowerPoint format (.pptx)</li>
+        </ol>
       </div>
-      `;
-    }).join('')}
+      
+      ${slides.map((slide, index) => {
+        const imageUrl = searchedImages[index]?.url || getPlaceholderImageUrl(slide.image, index);
+        return `
+        <div class="slide">
+          <h1>${slide.heading}</h1>
+          <ul>
+            ${slide.points.map(point => `<li>${point}</li>`).join('')}
+          </ul>
+          <img src="${imageUrl}" alt="${slide.image}">
+        </div>
+        `;
+      }).join('')}
     </body>
     </html>
     `;
     
-    // Create a simple text instruction file to accompany the HTML file
-    const instructionText = `
-    ==========================================
-    POWERPOINT PRESENTATION - CONVERSION GUIDE
-    ==========================================
+    // Create a Blob with the HTML content
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
     
-    To convert this to a PowerPoint presentation:
+    // Create a download link and trigger it
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'presentation_for_powerpoint.html';
+    document.body.appendChild(a);
+    a.click();
     
-    1. Open the provided HTML file in Microsoft Word
-    2. Use File > Save As and select PowerPoint format (.pptx)
-    3. Word will convert the file to PowerPoint format
-    
-    Alternative method:
-    1. Open PowerPoint
-    2. Create a new presentation
-    3. Go to Home > New Slide > Slides from Outline
-    4. Select the .html file
-    
-    Note: Some manual formatting may be required after conversion.
-    ==========================================
-    `;
-    
-    // Create a zip file with both files
-    const zip = window.JSZip ? new window.JSZip() : null;
-    
-    if (zip) {
-      // Add files to zip
-      zip.file("presentation.html", pptContent);
-      zip.file("conversion_instructions.txt", instructionText);
-      
-      // Generate the zip file
-      zip.generateAsync({type:"blob"}).then(function(content: Blob) {
-        // Create download link
-        const url = URL.createObjectURL(content);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'presentation_package.zip';
-        document.body.appendChild(a);
-        a.click();
-        
-        // Clean up
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      });
-    } else {
-      // Fallback to just HTML if JSZip not available
-      alert("PPTX download requires JSZip library. HTML download initiated instead.");
-      handleDownloadHTML();
-    }
+    // Clean up
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Add JSZip library from CDN */}
-      <script 
-        src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" 
-        integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" 
-        crossOrigin="anonymous" 
-        referrerPolicy="no-referrer"
-      />
-
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold">Presentation Preview</h2>
         <div className="flex gap-2">
@@ -674,7 +649,7 @@ export default function Presentation({ slides }: PresentationProps) {
             </Button>
           </div>
           
-          <div className="dropdown relative">
+          <div className="dropdown relative group">
             <Button
               variant="default"
               style={{backgroundColor: theme.accentColor, color: '#ffffff'}}
@@ -682,7 +657,7 @@ export default function Presentation({ slides }: PresentationProps) {
             >
               <Download size={16} /> Download
             </Button>
-            <div className="dropdown-menu absolute right-0 mt-2 bg-white shadow-lg rounded p-2 z-10 hidden">
+            <div className="dropdown-menu absolute right-0 mt-2 bg-white shadow-lg rounded p-2 z-10 hidden group-hover:block">
               <Button
                 variant="ghost"
                 onClick={handleDownloadHTML}
@@ -723,27 +698,6 @@ export default function Presentation({ slides }: PresentationProps) {
           ))}
         </div>
       </div>
-      
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          // Show dropdown menu on click
-          document.addEventListener('DOMContentLoaded', function() {
-            const toggle = document.querySelector('.dropdown-toggle');
-            const menu = document.querySelector('.dropdown-menu');
-            
-            if (toggle && menu) {
-              toggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                menu.classList.toggle('hidden');
-              });
-              
-              document.addEventListener('click', function() {
-                menu.classList.add('hidden');
-              });
-            }
-          });
-        `
-      }} />
     </div>
   );
 } 
